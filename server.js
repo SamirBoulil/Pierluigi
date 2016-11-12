@@ -15,6 +15,10 @@ var slapp = Slapp({
   context: Context()
 })
 
+// enable debugging
+require('beepboop-slapp-presence-polyfill')(slapp, {
+  debug: true
+})
 
 var HELP_TEXT = `
 I will respond to the following messages:
