@@ -26,60 +26,67 @@ require('beepboop-slapp-presence-polyfill')(slapp, {
 // Register feature
 //*********************************************
 slapp.message('register', ['direct_message'], (msg) => {
-  var isRegistered = false;
-  // var isRegistered = Api.isUserRegistered(msg.user.name);
-
-  if (!isRegistered) {
-    msg.say({
-      text: '',
-      attachments: [{
-        fallback: 'Do you want to register ?',
-        title: 'Do you want to join the Akeneo Baby Foot Star League (ABSL) ?',
-        callback_id: 'register_callback',
-        color: '#3AA3E3',
-        attachment_type: 'default',
-        actions: [{
-          name: 'register_answer',
-          text: 'Hell yeah!',
-          style: 'primary',
-          type: 'button',
-          value: 'yes'
-        },
-        {
-          name: 'register_answer',
-          text: 'Nope, not intrested',
-          type: 'button',
-          value: 'no'
-        }]
-      }]
-    })
-  } else {
-    msg.say('You are already enrolled into the Akeneo Baby Foot Star League');
-    // TODO: show rankings
-    // TODO: Show challengers
-  }
+  ApiHelper.isUserRegistered(msg.meta.user_id)
+    .then((isRegistered) => {
+      if (!isRegistered) {
+        msg.say({
+          text: '',
+          attachments: [{
+            fallback: 'Do you want to register ?',
+            title: 'Do you want to join the Akeneo Baby Foot Star League (ABSL) ?',
+            callback_id: 'register_callback',
+            color: '#3AA3E3',
+            attachment_type: 'default',
+            actions: [{
+              name: 'register_answer',
+              text: 'Hell yeah!',
+              style: 'primary',
+              type: 'button',
+              value: 'yes'
+            },
+            {
+              name: 'register_answer',
+              text: 'Nope, not intrested',
+              type: 'button',
+              value: 'no'
+            }]
+          }]
+        })
+      } else {
+        msg.say('You are already enrolled into the Akeneo Baby Foot Star League');
+        // TODO: show rankings
+        // TODO: Show challengers
+      }
+    }
+  ).catch(function(error) {
+    console.log("do something");
+  });
 })
 
 slapp.action('register_callback', 'register_answer', (msg, value) => {
-  var responseWrapper = {
+  var registerAnswer = '';
+
+  if (value === 'yes') {
+    registerAnswer = 'Awesome! let me register your account before you can start playing.';
+    ApiHelper.register(msg.meta.user_id, 'samir');
+  } else {
+    registerAnswer= 'Alright, then come back to me when you are ready! :soccer:';
+    // msg.say(msg.body.response_url, 'Perfect, you are now registered!');
+    // Call the tutorial route
+  }
+
+  var responseAnswer = {
     text: '',
     attachments: [{
       fallback: 'Do you want to register ?',
       title: 'Do you want to join the Akeneo Baby Foot Star League (ABSL) ?',
+      text: registerAnswer,
       callback_id: 'register_callback',
       color: '#3AA3E3',
     }]
   };
 
-  if (value === 'yes') {
-    responseWrapper['attachments'][0]['text'] = 'Awesome! let me register your account before you can start playing.';
-  } else {
-    responseWrapper['attachments'][0]['text'] = 'Alright, then come back to me when you are ready! :soccer:';
-    // msg.say(msg.body.response_url, 'Perfect, you are now registered!');
-    // Call the tutorial route
-  }
-
-  msg.respond(msg.body.response_url, responseWrapper);
+  msg.respond(msg.body.response_url, responseAnswer);
   // TODO: show ranking
   // TODO: show possible challengers');
 })
