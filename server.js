@@ -20,45 +20,79 @@ require('beepboop-slapp-presence-polyfill')(slapp, {
   debug: true
 })
 
-var HELP_TEXT = `
-I will respond to the following messages:
-\`help\` - to see this message.
-\`hi\` - to demonstrate a conversation that tracks state.
-\`thanks\` - to demonstrate a simple response.
-\`<type-any-other-text>\` - to demonstrate a random emoticon response, some of the time :wink:.
-\`attachment\` - to see a Slack attachment message.
-`
 
 //*********************************************
-// Setup different handlers for messages
+// Register feature
 //*********************************************
 slapp.message('register', ['direct_message'], (msg) => {
-  msg.say({
+  var isRegistered = false;
+  // var isRegistered = Api.isUserRegistered(msg.user.name);
+
+  if (!isRegistered) {
+    msg.say({
+      text: '',
+      attachments: [{
+        fallback: 'Do you want to register ?',
+        title: 'Do you want to join the Akeneo Baby Foot Star League (ABSL) ?',
+        callback_id: 'register_callback',
+        color: '#3AA3E3',
+        attachment_type: 'default',
+        actions: [{
+          name: 'register_answer',
+          text: 'Hell yeah!',
+          style: 'primary',
+          type: 'button',
+          value: 'yes'
+        },
+        {
+          name: 'register_answer',
+          text: 'Nope, not intrested',
+          type: 'button',
+          value: 'no'
+        }]
+      }]
+    })
+  } else {
+    msg.say('You are already enrolled into the Akeneo Baby Foot Star League');
+    // TODO: show rankings
+    // TODO: Show challengers
+  }
+})
+
+slapp.action('register_callback', 'register_answer', (msg, value) => {
+  var responseWrapper = {
+    text: '',
     attachments: [{
       fallback: 'Do you want to register ?',
       title: 'Do you want to join the Akeneo Baby Foot Star League (ABSL) ?',
       callback_id: 'register_callback',
       color: '#3AA3E3',
-      attachment_type: 'default',
-      actions: [{
-        name: 'yes',
-        text: 'Hell yeah!',
-        type: 'button',
-        value: 'yes',
-        style: 'primary'
-      },
-      {
-        name: 'no',
-        text: 'Nope, not intrested',
-        type: 'button',
-        value: 'no'
-      }]
     }]
-  })
+  };
+
+  if (value === 'yes') {
+    responseWrapper['attachments'][0]['text'] = 'Awesome! let me register your account before you can start playing.';
+  } else {
+    responseWrapper['attachments'][0]['text'] = 'Alright, then come back to me when you are ready! :soccer:';
+    // msg.say(msg.body.response_url, 'Perfect, you are now registered!');
+    // Call the tutorial route
+  }
+
+  msg.respond(msg.body.response_url, responseWrapper);
+  // TODO: show ranking
+  // TODO: show possible challengers');
 })
 
 // response to the user typing "help"
 slapp.message('help', ['mention', 'direct_message'], (msg) => {
+  var HELP_TEXT = `
+    I will respond to the following messages:
+    \`register\` - to see this message.
+    \`hi\` - to demonstrate a conversation that tracks state.
+    \`thanks\` - to demonstrate a simple response.
+    \`<type-any-other-text>\` - to demonstrate a random emoticon response, some of the time :wink:.
+    \`attachment\` - to see a Slack attachment message.
+    `
   msg.say(HELP_TEXT)
 })
 
