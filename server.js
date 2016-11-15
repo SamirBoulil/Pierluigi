@@ -59,7 +59,7 @@ slapp.message('register', ['direct_message'], (msg) => {
       }
     }
   ).catch(function(error) {
-    console.log("do something");
+    // TODO: Send message if an error occured
   });
 })
 
@@ -68,7 +68,7 @@ slapp.action('register_callback', 'register_answer', (msg, value) => {
 
   if (value === 'yes') {
     registerAnswer = 'Awesome! let me register your account before you can start playing.';
-    ApiHelper.register(msg.meta.user_id, 'samir');
+    ApiHelper.register(msg.meta.user_id, msg.body.user.name);
   } else {
     registerAnswer= 'Alright, then come back to me when you are ready! :soccer:';
     // msg.say(msg.body.response_url, 'Perfect, you are now registered!');
