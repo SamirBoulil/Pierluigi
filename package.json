@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/BeepBoopHQ/starter-slapp-app#readme",
   "dependencies": {
+    "axios": "^0.15.2",
     "beepboop-slapp-presence-polyfill": "^1.1.1",
     "express": "^4.14.0",
     "nodemon": "^1.11.0",
