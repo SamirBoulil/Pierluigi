@@ -23,10 +23,10 @@ require('beepboop-slapp-presence-polyfill')(slapp, {
 
 
 //*********************************************
-// Register feature
+// Register handler
 //*********************************************
-slapp.message('register', ['direct_message'], (msg) => {
-  ApiHelper.isUserRegistered(msg.meta.user_id)
+slapp.message('^.register', ['direct_message'], (msg) => {
+  ApiHelper.isPlayerRegistered(msg.meta.user_id)
     .then((isRegistered) => {
       if (!isRegistered) {
         msg.say({
@@ -63,16 +63,16 @@ slapp.message('register', ['direct_message'], (msg) => {
   });
 })
 
+// Two != callbacks for this
 slapp.action('register_callback', 'register_answer', (msg, value) => {
   var registerAnswer = '';
 
   if (value === 'yes') {
     registerAnswer = 'Awesome! let me register your account before you can start playing.';
-    ApiHelper.register(msg.meta.user_id, msg.body.user.name);
+    ApiHelper.register(msg.meta.user_id);
   } else {
     registerAnswer= 'Alright, then come back to me when you are ready! :soccer:';
-    // msg.say(msg.body.response_url, 'Perfect, you are now registered!');
-    // Call the tutorial route
+    // TODO: Call the helper route
   }
 
   var responseAnswer = {
@@ -87,15 +87,62 @@ slapp.action('register_callback', 'register_answer', (msg, value) => {
   };
 
   msg.respond(msg.body.response_url, responseAnswer);
-  // TODO: show ranking
+  // TODO: show ranks
   // TODO: show possible challengers');
-})
+});
 
-// response to the user typing "help"
-slapp.message('help', ['mention', 'direct_message'], (msg) => {
+//*********************************************
+// Feature match logging: .win
+//*********************************************
+// TODO: Protected route
+slapp.message('^.(win|won) <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'], (msg, text, loserId, winnerScore, loserScore) => {
+  console.log(text);
+
+  var winnerId = msg.meta.user_id;
+  winnerScore = Math.floor(parseInt(winnerScore, 10));
+  loserScore = Math.floor(parseInt(loserScore, 10));
+
+  var isInputError = false;
+  var textResponse = [];
+
+  if (winnerId === loserId) {
+    isInputError = true;
+    textResponse.push('- Winner and loser cannot be the same user.');
+  }
+  if (loserScore >= winnerScore) {
+    isInputError = true;
+    textResponse.push(`- Winner\'s score *(${winnerScore})* cannot be greater than the loser\'s score *(${loserScore})*.`);
+  }
+  if (winnerScore !== 10) {
+    isInputError = true;
+    textResponse.push(`- Winner\'s score *(${winnerScore})* should be 10.`);
+  }
+
+  ApiHelper.isPlayerRegistered(loserId)
+  .then((isRegistered) => {
+    if (isRegistered === false) {
+      isInputError = true;
+      textResponse.push(`- Losing player (<@${loserId}>) is not registered in the Akeneo Baby Foot League.`);
+      // TODO: Show the list of user with the rankings
+    }
+
+    if (isInputError) {
+      msg.say('Oups, an error occured while saving the game result.\n' + textResponse.join('\n'));
+    } else {
+      msg.say(`Congratz for this huge win ! Let me check the result with <@${loserId}>.\n I\'ll come back to you when I\m done.`);
+    }
+  });
+});
+
+//*********************************************
+// Help handler .wcid
+//*********************************************
+slapp.message('help|.wcid', ['mention', 'direct_message'], (msg) => {
   var HELP_TEXT = `
     I will respond to the following messages:
-    \`register\` - to see this message.
+    \`.wcid\` - to get some help.
+    \`.register\` - to see this message.
+    \`.won <LOSING-PLAYER> <WINNER-SCORE>-<LOSER-SCORE>\` - to log a game result you have won.
     \`hi\` - to demonstrate a conversation that tracks state.
     \`thanks\` - to demonstrate a simple response.
     \`<type-any-other-text>\` - to demonstrate a random emoticon response, some of the time :wink:.
