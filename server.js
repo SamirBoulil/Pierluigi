@@ -95,7 +95,7 @@ slapp.action('register_callback', 'register_answer', (msg, value) => {
 // Feature match logging: .win
 //*********************************************
 // TODO: Protected route
-slapp.message('^.(win|won) <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'], (msg, text, loserId, winnerScore, loserScore) => {
+slapp.message('^.win|won <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'], (msg, text, loserId, winnerScore, loserScore) => {
   console.log(text);
 
   var winnerId = msg.meta.user_id;
@@ -105,17 +105,25 @@ slapp.message('^.(win|won) <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'
   var isInputError = false;
   var textResponse = [];
 
+  // Parsing score values
+  if (isNaN(winnerScore) || isNaN(loserScore)) {
+    // TODO: Print usage();
+    textResponse.push('The scores are not valid values.');
+  } else {
+    if (loserScore >= winnerScore) {
+      isInputError = true;
+      textResponse.push(`- Winner\'s score *(${winnerScore})* cannot be greater than the loser\'s score *(${loserScore})*.`);
+    }
+    if (winnerScore !== 10) {
+      isInputError = true;
+      textResponse.push(`- Winner\'s score *(${winnerScore})* should be 10.`);
+    }
+  }
+
+  // Checking player's registration
   if (winnerId === loserId) {
     isInputError = true;
     textResponse.push('- Winner and loser cannot be the same user.');
-  }
-  if (loserScore >= winnerScore) {
-    isInputError = true;
-    textResponse.push(`- Winner\'s score *(${winnerScore})* cannot be greater than the loser\'s score *(${loserScore})*.`);
-  }
-  if (winnerScore !== 10) {
-    isInputError = true;
-    textResponse.push(`- Winner\'s score *(${winnerScore})* should be 10.`);
   }
 
   ApiHelper.isPlayerRegistered(loserId)
@@ -129,10 +137,56 @@ slapp.message('^.(win|won) <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'
     if (isInputError) {
       msg.say('Oups, an error occured while saving the game result.\n' + textResponse.join('\n'));
     } else {
-      msg.say(`Congratz for this huge win ! Let me check the result with <@${loserId}>.\n I\'ll come back to you when I\m done.`);
+      var state = {winnerId: winnerId, loserId: loserId, winnerScore, loserScore};
+      debugger;
+      msg
+      .say(`Congratz for this huge win ! Let me check the result with <@${loserId}>.\n I\'ll come back to you when I\m done.`)
+      .route('handle_match_confirmation', state, 600);
     }
+  })
+  .catch((error) => {
+    console.log('An error occured while checking if the loserId is registered');
+    console.log(error);
   });
 });
+
+slapp.route('handle_match_confirmation', (msg, state) => {
+  debugger;
+  console.log('Route handling confirmation');
+  console.log(state);
+  msg
+  .say({
+    channel: state.loserId,
+    text: '',
+    attachments: [{
+      fallback: 'Match log confirmation',
+      title: `Do you confirm that you lost ${state.winnerScore}-${state.loserScore} against <@${state.winnerId}> ?`,
+      callback_id: 'match_confirmation_callback',
+      color: '#3AA3E3',
+      attachment_type: 'default',
+      actions: [{
+        name: 'match_confirmation',
+        text: 'Yep, good game.',
+        style: 'primary',
+        type: 'button',
+        value: 'yes'
+      },
+      {
+        name: 'match_confirmation',
+        text: 'NO WAY ! That\' a lie!',
+        type: 'button',
+        value: 'no'
+      }]
+    }]
+  });
+});
+
+//slapp.action('match_confirmation_callback', 'match_confirmation', 'yes', (msg, value) => {
+  //console.log('Match result confirmed');
+//});
+//slapp.action('match_confirmation_callback', 'match_confirmation', 'no', (msg, value) => {
+  //console.log('Match result infirmed');
+//});
 
 //*********************************************
 // Help handler .wcid
