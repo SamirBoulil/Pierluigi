@@ -69,7 +69,7 @@ slapp.action('register_callback', 'register_answer', (msg, value) => {
 
   if (value === 'yes') {
     registerAnswer = 'Awesome! let me register your account before you can start playing.';
-    ApiHelper.register(msg.meta.user_id);
+    ApiHelper.registerPlayer(msg.meta.user_id);
   } else {
     registerAnswer= 'Alright, then come back to me when you are ready! :soccer:';
     // TODO: Call the helper route
@@ -151,9 +151,8 @@ slapp.message('^.win|won <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'],
 });
 
 slapp.route('handle_match_confirmation', (msg, state) => {
-  debugger;
   console.log('Route handling confirmation');
-  console.log(state);
+
   msg
   .say({
     channel: state.loserId,
@@ -165,28 +164,48 @@ slapp.route('handle_match_confirmation', (msg, state) => {
       color: '#3AA3E3',
       attachment_type: 'default',
       actions: [{
-        name: 'match_confirmation',
+        name: 'match_confirmation_yes',
         text: 'Yep, good game.',
         style: 'primary',
         type: 'button',
-        value: 'yes'
+        value: common.marshall({ state: state, value: 'yes' })
       },
       {
-        name: 'match_confirmation',
+        name: 'match_confirmation_no',
         text: 'NO WAY ! That\' a lie!',
         type: 'button',
-        value: 'no'
+        value: common.marshall({ state: state, value: 'no' })
       }]
     }]
   });
 });
 
-//slapp.action('match_confirmation_callback', 'match_confirmation', 'yes', (msg, value) => {
-  //console.log('Match result confirmed');
-//});
-//slapp.action('match_confirmation_callback', 'match_confirmation', 'no', (msg, value) => {
-  //console.log('Match result infirmed');
-//});
+slapp.action('match_confirmation_callback', 'match_confirmation_yes', (msg, args) => {
+  args = common.unmarshall(args)
+  if (typeof args !== 'undefined') {
+    state = args.state;
+    ApiHelper.registerMatchResult(state.winnerId, state.loserId, winnerScore, loserScore)
+    .then(()=> {
+      msg.respond(msg.body.response_url, 'Ok, the match result has been successfully registered.');
+      msg.route('show_rank_and_challengers', {playerId: state.loserId});
+      msg.route('show_rank_and_challengeers', {playerId: state.winnerId});
+    });
+  }
+});
+
+slapp.action('match_confirmation_callback', 'match_confirmation_no', (msg, args) => {
+  args = common.unmarshall(args)
+  if (typeof args !== 'undefined') {
+    state = args.state;
+    msg.respond(msg.body.response_url, `Ok, You\'ll have to see this IRL with @${state.winnerId}`);
+    msg.route('show_rank_and_challengers', {playerId: state.loserId});
+    msg.route('show_rank_and_challengeers', {playerId: state.winnerId});
+  }
+});
+
+slapp.route('show_rank_and_challengers', (msg, state) => {
+  // TODO: show ranks and challengers
+});
 
 //*********************************************
 // Help handler .wcid

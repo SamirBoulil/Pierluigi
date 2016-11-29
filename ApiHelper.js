@@ -17,7 +17,7 @@ var ApiHelper = (function() {
     });
   };
 
-  self.register = function(playerId) {
+  self.registerPlayer = function(playerId) {
     return axios.get('rankings.json')
       .then((response) => {
         // Determine last ranking
@@ -48,6 +48,32 @@ var ApiHelper = (function() {
       console.log("An error occured while getting the list of users to determine max rank");
       console.log(error);
     });
+  }
+
+  self.addMatchResult = function(winnerId, loserId, winnerScore, loserScore) {
+        return axios.put('matchResults/',
+            {
+              winnerId: winnerId,
+              loserId: loserId,
+              winnerScore: winnerScore,
+              loserScore: loserScore,
+              date: new Date()
+            })
+        .catch(function (error) {
+          console.log("An error occured while registering a new user");
+          console.log(error);
+        });
+  }
+
+  self.refreshRank = function(winnerId) {
+    return axios
+    .get('rankings/' + playerId + '.json',
+         {
+         })
+         .catch((error) => {
+           console.log("An error occured while refreshing the rank of a player")
+           console.log(error);
+         });
   }
 
   return self;
