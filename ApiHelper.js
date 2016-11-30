@@ -1,4 +1,6 @@
-const axios = require('axios')
+'use strict';
+
+const axios = require('axios');
 
 axios.defaults.baseURL = "https://pierluigi-collina.firebaseio.com";
 
@@ -71,7 +73,7 @@ var ApiHelper = (function() {
     return self.getPlayerRank(winnerId).then((winnerRank) => {
       return self.getPlayerRank(loserId).then((loserRank) => {
         if (winnerRank-1 === loserRank) {
-          console.log("swapping the ranks of users" + winnerRank + "and " + loserRank);
+          console.log("swapping the ranks of users " + winnerId + " and " + loserId);
           // winner won against better player challenger.
           // swap ranks
           axios.patch('rankings/'+winnerId+'.json', {
