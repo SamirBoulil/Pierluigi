@@ -1,6 +1,7 @@
 'use strict';
 
 const axios = require('axios');
+const Promise = require('promise');
 
 axios.defaults.baseURL = "https://pierluigi-collina.firebaseio.com";
 
@@ -94,6 +95,28 @@ var ApiHelper = (function() {
     })
     .catch((error) => {
       console.log("An error occured while getting the rank of the player");
+      console.log(error);
+    });
+  }
+
+  self.getRankings = function() {
+    return axios.get('rankings.json?orderBy="rank"')
+    .then((response) => {
+      var users = response.data;
+      var parsedUsers = [];
+
+      for (var user in users) {
+        if (users.hasOwnProperty(user)) {
+          parsedUsers.push({playerId: user, rank:users[user].rank});
+        }
+      }
+
+      console.log(parsedUsers);
+
+      return Promise.resolve(parsedUsers);
+    })
+    .catch((error) => {
+      console.log('An error occured while getting the player ranks')
       console.log(error);
     });
   }

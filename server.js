@@ -58,10 +58,10 @@ slapp.message('^.register', ['direct_message'], (msg) => {
       // TODO: show rankings
       // TODO: Show challengers
     }
-  }
-       ).catch(function(error) {
-         // TODO: Send message if an error occured
-       });
+  })
+  .catch(function(error) {
+    // TODO: Send message if an error occured
+  });
 })
 
 // Two != callbacks for this
@@ -208,8 +208,41 @@ slapp.action('match_confirmation_callback', 'match_confirmation_no', (msg, args)
   }
 });
 
-slapp.route('show_rank_and_challengers', (msg, state) => {
-  // TODO: show ranks and challengers
+//*********************************************
+// Feature leaderboard
+//*********************************************
+slapp.message('^.leaderboard', ['direct_message'], (msg, text) => {
+  var state = {playerId: msg.meta.user_id};
+  console.log(state);
+  msg.route('show_leaderboard', state);
+
+  var rankings = ApiHelper.getRankings().then((rankings) => {
+    var leaderBoard = rankings.map((element) => {
+      return element.rank + "- <@" + element.player + ">"
+    });
+
+    msg.respond({
+      channel: state.loserId,
+      text: leaderBoard
+    });
+  });
+});
+
+slapp.route('show_leaderboard', (msg, state) => {
+  console.log("show_leaderboard route");
+  ApiHelper.getRankings().then((rankings) => {
+    console.log("RANKINGS OK RESPOND");
+
+    var leaderBoard = rankings.map((score) => {
+      return score.rank + "- <@" + score.playerId + ">"
+    });
+
+    console.log(leaderBoard);
+
+    msg.say({
+      text: leaderBoard.join('\n')
+    });
+  });
 });
 
 //*********************************************
