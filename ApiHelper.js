@@ -122,7 +122,7 @@ var ApiHelper = (function() {
   self.getChallengers = function(playerId) {
     return self.getPlayerRank(playerId).then((playerRank) => {
       console.log('PLAYER RANK: '+ playerRank);
-      var startAt = (playerRank-1 <= 0) ? 1 : playerRank;
+      var startAt = (playerRank-1 <= 0) ? 1 : playerRank-1;
       var endAt = playerRank + 1;
       console.log('rankings.json?orderBy="rank"&startAt='+startAt+'&endAt='+endAt);
 

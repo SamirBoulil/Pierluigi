@@ -139,7 +139,6 @@ slapp.message('^.win <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'], (ms
       msg.say('Oups, an error occured while saving the game result.\n' + textResponse.join('\n'));
     } else {
       var state = {winnerId: winnerId, loserId: loserId, winnerScore, loserScore};
-      debugger;
       msg
       .say(`Congratz for this huge win ! Let me check the result with <@${loserId}>.\n I\'ll come back to you when I\m done.`)
       .route('handle_match_confirmation', state, 600);
@@ -196,6 +195,7 @@ slapp.action('match_confirmation_callback', 'match_confirmation_yes', (msg, args
 
 slapp.action('match_confirmation_callback', 'match_confirmation_no', (msg, args) => {
   args = Utils.unmarshall(args);
+
   if (typeof(args.state) !== 'undefined') {
     var state = args.state;
     ApiHelper.addMatchResult(state.winnerId, state.loserId, state.winnerScore, state.loserScore)
@@ -237,13 +237,11 @@ slapp.route('show_leaderboard', (msg, state) => {
 // Feature challengers
 //*********************************************
 slapp.message('^.challengers', ['direct_message'], (msg, text) => {
-  console.log('message: challengers');
   var state = {playerId: msg.meta.user_id};
   msg.route('show_challengers', state);
 })
 
 slapp.route('show_challengers', (msg, state) => {
-  console.log('route: show_challengers');
   ApiHelper.getChallengers(state.playerId).then((challengers) => {
     var messages = [];
 
@@ -255,9 +253,6 @@ slapp.route('show_challengers', (msg, state) => {
       messages.push('Don\'t *lose* against <@' + challengers.notToLose.playerId + '> ('+challengers.notToLose.rank+' th) or you\'ll go down in the leaderboard :s');
     }
 
-    console.log(messages);
-    text = messages.join('\n');
-
     msg.say({
       channel: state.playerId,
       as_user: true,
@@ -265,7 +260,6 @@ slapp.route('show_challengers', (msg, state) => {
     });
   });
 });
-
 
 //*********************************************
 // Help handler .wcid
