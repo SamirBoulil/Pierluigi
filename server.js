@@ -205,7 +205,7 @@ slapp.action('match_confirmation_callback', 'match_confirmation_no', (msg, args)
       msg.route('show_challengers', {playerId: state.loserId});
 
       msg.route('show_leaderboard', {playerId: state.winnerId});
-      msg.route('show_challengers', {playerId: state.winnerId});
+      msg.route('show_challengers', {playerid: state.winnerid});
     });
   }
 });
@@ -231,6 +231,41 @@ slapp.route('show_leaderboard', (msg, state) => {
     });
   });
 });
+
+
+//*********************************************
+// Feature challengers
+//*********************************************
+slapp.message('^.challengers', ['direct_message'], (msg, text) => {
+  console.log('message: challengers');
+  var state = {playerId: msg.meta.user_id};
+  msg.route('show_challengers', state);
+})
+
+slapp.route('show_challengers', (msg, state) => {
+  console.log('route: show_challengers');
+  ApiHelper.getChallengers(state.playerId).then((challengers) => {
+    var messages = [];
+
+    if (typeof(challengers.toBeat) !== 'undefined') {
+      messages.push('To go up in the leader board, you need to beat <@' + challengers.toBeat.playerId + '> ('+challengers.toBeat.rank+' th)');
+    }
+
+    if (typeof(challengers.notToLose) !== 'undefined') {
+      messages.push('Don\'t *lose* against <@' + challengers.notToLose.playerId + '> ('+challengers.notToLose.rank+' th) or you\'ll go down in the leaderboard :s');
+    }
+
+    console.log(messages);
+    text = messages.join('\n');
+
+    msg.say({
+      channel: state.playerId,
+      as_user: true,
+      text: messages.join('\n')
+    });
+  });
+});
+
 
 //*********************************************
 // Help handler .wcid

@@ -119,6 +119,42 @@ var ApiHelper = (function() {
     });
   }
 
+  self.getChallengers = function(playerId) {
+    return self.getPlayerRank(playerId).then((playerRank) => {
+      console.log('PLAYER RANK: '+ playerRank);
+      var startAt = (playerRank-1 <= 0) ? 1 : playerRank;
+      var endAt = playerRank + 1;
+      console.log('rankings.json?orderBy="rank"&startAt='+startAt+'&endAt='+endAt);
+
+      return axios.get('rankings.json?orderBy="rank"&startAt='+startAt+'&endAt='+endAt)
+      .then((response) => {
+        var players = response.data;
+        var parsedPlayers = {};
+
+        for (var player in players) {
+          if (players.hasOwnProperty(player)) {
+            var playerToParse = {playerId: player, rank:players[player].rank};
+            if (player === playerId) {
+              parsedPlayers.currentPlayer = playerToParse;
+            } else if (players[player].rank < playerRank) {
+              parsedPlayers.toBeat = playerToParse;
+            } else if (players[player].rank > playerRank) {
+              parsedPlayers.notToLose = playerToParse;
+            }
+          }
+        }
+
+        console.log(parsedPlayers)
+
+        return Promise.resolve(parsedPlayers);
+      })
+      .catch((error) => {
+        console.log('An error occured while retrieving the player challengers');
+        console.log(error);
+      });
+    })
+  }
+
   return self;
 })();
 
