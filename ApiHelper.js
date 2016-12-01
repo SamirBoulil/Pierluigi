@@ -1,6 +1,7 @@
 'use strict';
 
 const axios = require('axios');
+const Promise = require('promise');
 
 axios.defaults.baseURL = "https://pierluigi-collina.firebaseio.com";
 
@@ -37,14 +38,13 @@ var ApiHelper = (function() {
       var lastRanking = maxRank + 1;
 
       // Inset new user at the end of the rankings
-      return axios.put('rankings/' + playerId + '.json',
-                       {
-                         rank: lastRanking
-                       })
-                       .catch(function (error) {
-                         console.log("An error occured while registering a new user");
-                         console.log(error);
-                       });
+      return axios.put('rankings/' + playerId + '.json', {
+        rank: lastRanking
+      })
+      .catch(function (error) {
+        console.log("An error occured while registering a new user");
+        console.log(error);
+      });
     })
     .catch(function(error) {
       console.log("An error occured while getting the list of users to determine max rank");
@@ -53,18 +53,17 @@ var ApiHelper = (function() {
   }
 
   self.addMatchResult = function(winnerId, loserId, winnerScore, loserScore) {
-    return axios.post('matchResults.json',
-                      {
-                        winnerId: winnerId,
-                        loserId: loserId,
-                        winnerScore: winnerScore,
-                        loserScore: loserScore,
-                        date: new Date()
-                      })
-                      .catch(function (error) {
-                        console.log("An error occured while adding a match result");
-                        console.log(error);
-                      });
+    return axios.post('matchResults.json', {
+      winnerId: winnerId,
+      loserId: loserId,
+      winnerScore: winnerScore,
+      loserScore: loserScore,
+      date: new Date()
+    })
+    .catch(function (error) {
+      console.log("An error occured while adding a match result");
+      console.log(error);
+    });
   }
 
   self.refreshRank = function(winnerId, loserId) {
@@ -96,6 +95,58 @@ var ApiHelper = (function() {
       console.log("An error occured while getting the rank of the player");
       console.log(error);
     });
+  }
+
+  self.getRankings = function() {
+    return axios.get('rankings.json?orderBy="rank"&startAt=1')
+    .then((response) => {
+      var users = response.data;
+      var parsedUsers = [];
+
+      for (var user in users) {
+        if (users.hasOwnProperty(user)) {
+          parsedUsers.push({playerId: user, rank:users[user].rank});
+        }
+      }
+
+      return Promise.resolve(parsedUsers);
+    })
+    .catch((error) => {
+      console.log('An error occured while getting the player ranks')
+      console.log(error);
+    });
+  }
+
+  self.getChallengers = function(playerId) {
+    return self.getPlayerRank(playerId).then((playerRank) => {
+      var startAt = (playerRank-1 <= 0) ? 1 : playerRank-1;
+      var endAt = playerRank + 1;
+
+      return axios.get('rankings.json?orderBy="rank"&startAt='+startAt+'&endAt='+endAt)
+      .then((response) => {
+        var players = response.data;
+        var parsedPlayers = {};
+
+        for (var player in players) {
+          if (players.hasOwnProperty(player)) {
+            var playerToParse = {playerId: player, rank:players[player].rank};
+            if (player === playerId) {
+              parsedPlayers.currentPlayer = playerToParse;
+            } else if (players[player].rank < playerRank) {
+              parsedPlayers.toBeat = playerToParse;
+            } else if (players[player].rank > playerRank) {
+              parsedPlayers.notToLose = playerToParse;
+            }
+          }
+        }
+
+        return Promise.resolve(parsedPlayers);
+      })
+      .catch((error) => {
+        console.log('An error occured while retrieving the player challengers');
+        console.log(error);
+      });
+    })
   }
 
   return self;

@@ -58,10 +58,10 @@ slapp.message('^.register', ['direct_message'], (msg) => {
       // TODO: show rankings
       // TODO: Show challengers
     }
-  }
-       ).catch(function(error) {
-         // TODO: Send message if an error occured
-       });
+  })
+  .catch(function(error) {
+    // TODO: Send message if an error occured
+  });
 })
 
 // Two != callbacks for this
@@ -139,7 +139,6 @@ slapp.message('^.win <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'], (ms
       msg.say('Oups, an error occured while saving the game result.\n' + textResponse.join('\n'));
     } else {
       var state = {winnerId: winnerId, loserId: loserId, winnerScore, loserScore};
-      debugger;
       msg
       .say(`Congratz for this huge win ! Let me check the result with <@${loserId}>.\n I\'ll come back to you when I\m done.`)
       .route('handle_match_confirmation', state, 600);
@@ -152,10 +151,9 @@ slapp.message('^.win <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'], (ms
 });
 
 slapp.route('handle_match_confirmation', (msg, state) => {
-  console.log('Route handling confirmation');
-
   msg.say({
     channel: state.loserId,
+    as_user: true,
     text: '',
     attachments: [{
       fallback: 'Match log confirmation',
@@ -197,19 +195,70 @@ slapp.action('match_confirmation_callback', 'match_confirmation_yes', (msg, args
 
 slapp.action('match_confirmation_callback', 'match_confirmation_no', (msg, args) => {
   args = Utils.unmarshall(args);
+
   if (typeof(args.state) !== 'undefined') {
     var state = args.state;
     ApiHelper.addMatchResult(state.winnerId, state.loserId, state.winnerScore, state.loserScore)
     .then(()=> {
       msg.respond(msg.body.response_url, `Ok, You\'ll have to see this IRL with <@${state.winnerId}>`);
-      msg.route('show_rank_and_challengers', {playerId: state.loserId});
-      msg.route('show_rank_and_challengers', {playerId: state.winnerId});
+      msg.route('show_leaderboard', {playerId: state.loserId});
+      msg.route('show_challengers', {playerId: state.loserId});
+
+      msg.route('show_leaderboard', {playerId: state.winnerId});
+      msg.route('show_challengers', {playerid: state.winnerid});
     });
   }
 });
 
-slapp.route('show_rank_and_challengers', (msg, state) => {
-  // TODO: show ranks and challengers
+//*********************************************
+// Feature leaderboard
+//*********************************************
+slapp.message('^.leaderboard', ['direct_message'], (msg, text) => {
+  var state = {playerId: msg.meta.user_id};
+  msg.route('show_leaderboard', state);
+})
+
+slapp.route('show_leaderboard', (msg, state) => {
+  ApiHelper.getRankings().then((rankings) => {
+    var leaderBoard = rankings.map((element) => {
+      return element.rank + "- <@" + element.playerId + ">"
+    });
+
+    msg.say({
+      channel: state.playerId,
+      as_user: true,
+      text: leaderBoard.join('\n')
+    });
+  });
+});
+
+
+//*********************************************
+// Feature challengers
+//*********************************************
+slapp.message('^.challengers', ['direct_message'], (msg, text) => {
+  var state = {playerId: msg.meta.user_id};
+  msg.route('show_challengers', state);
+})
+
+slapp.route('show_challengers', (msg, state) => {
+  ApiHelper.getChallengers(state.playerId).then((challengers) => {
+    var messages = [];
+
+    if (typeof(challengers.toBeat) !== 'undefined') {
+      messages.push('To go up in the leader board, you need to beat <@' + challengers.toBeat.playerId + '> ('+challengers.toBeat.rank+' th)');
+    }
+
+    if (typeof(challengers.notToLose) !== 'undefined') {
+      messages.push('Don\'t *lose* against <@' + challengers.notToLose.playerId + '> ('+challengers.notToLose.rank+' th) or you\'ll go down in the leaderboard :s');
+    }
+
+    msg.say({
+      channel: state.playerId,
+      as_user: true,
+      text: messages.join('\n')
+    });
+  });
 });
 
 //*********************************************
