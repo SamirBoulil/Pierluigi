@@ -38,14 +38,13 @@ var ApiHelper = (function() {
       var lastRanking = maxRank + 1;
 
       // Inset new user at the end of the rankings
-      return axios.put('rankings/' + playerId + '.json',
-                       {
-                         rank: lastRanking
-                       })
-                       .catch(function (error) {
-                         console.log("An error occured while registering a new user");
-                         console.log(error);
-                       });
+      return axios.put('rankings/' + playerId + '.json', {
+        rank: lastRanking
+      })
+      .catch(function (error) {
+        console.log("An error occured while registering a new user");
+        console.log(error);
+      });
     })
     .catch(function(error) {
       console.log("An error occured while getting the list of users to determine max rank");
@@ -54,18 +53,17 @@ var ApiHelper = (function() {
   }
 
   self.addMatchResult = function(winnerId, loserId, winnerScore, loserScore) {
-    return axios.post('matchResults.json',
-                      {
-                        winnerId: winnerId,
-                        loserId: loserId,
-                        winnerScore: winnerScore,
-                        loserScore: loserScore,
-                        date: new Date()
-                      })
-                      .catch(function (error) {
-                        console.log("An error occured while adding a match result");
-                        console.log(error);
-                      });
+    return axios.post('matchResults.json', {
+      winnerId: winnerId,
+      loserId: loserId,
+      winnerScore: winnerScore,
+      loserScore: loserScore,
+      date: new Date()
+    })
+    .catch(function (error) {
+      console.log("An error occured while adding a match result");
+      console.log(error);
+    });
   }
 
   self.refreshRank = function(winnerId, loserId) {
@@ -121,10 +119,8 @@ var ApiHelper = (function() {
 
   self.getChallengers = function(playerId) {
     return self.getPlayerRank(playerId).then((playerRank) => {
-      console.log('PLAYER RANK: '+ playerRank);
       var startAt = (playerRank-1 <= 0) ? 1 : playerRank-1;
       var endAt = playerRank + 1;
-      console.log('rankings.json?orderBy="rank"&startAt='+startAt+'&endAt='+endAt);
 
       return axios.get('rankings.json?orderBy="rank"&startAt='+startAt+'&endAt='+endAt)
       .then((response) => {
@@ -143,8 +139,6 @@ var ApiHelper = (function() {
             }
           }
         }
-
-        console.log(parsedPlayers)
 
         return Promise.resolve(parsedPlayers);
       })
