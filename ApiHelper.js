@@ -100,7 +100,7 @@ var ApiHelper = (function() {
   }
 
   self.getRankings = function() {
-    return axios.get('rankings.json?orderBy="rank"')
+    return axios.get('rankings.json?orderBy="rank"&startAt=1')
     .then((response) => {
       var users = response.data;
       var parsedUsers = [];
@@ -110,8 +110,6 @@ var ApiHelper = (function() {
           parsedUsers.push({playerId: user, rank:users[user].rank});
         }
       }
-
-      console.log(parsedUsers);
 
       return Promise.resolve(parsedUsers);
     })

@@ -152,10 +152,9 @@ slapp.message('^.win <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'], (ms
 });
 
 slapp.route('handle_match_confirmation', (msg, state) => {
-  console.log('Route handling confirmation');
-
   msg.say({
     channel: state.loserId,
+    as_user: true,
     text: '',
     attachments: [{
       fallback: 'Match log confirmation',
@@ -202,8 +201,11 @@ slapp.action('match_confirmation_callback', 'match_confirmation_no', (msg, args)
     ApiHelper.addMatchResult(state.winnerId, state.loserId, state.winnerScore, state.loserScore)
     .then(()=> {
       msg.respond(msg.body.response_url, `Ok, You\'ll have to see this IRL with <@${state.winnerId}>`);
-      msg.route('show_rank_and_challengers', {playerId: state.loserId});
-      msg.route('show_rank_and_challengers', {playerId: state.winnerId});
+      msg.route('show_leaderboard', {playerId: state.loserId});
+      msg.route('show_challengers', {playerId: state.loserId});
+
+      msg.route('show_leaderboard', {playerId: state.winnerId});
+      msg.route('show_challengers', {playerId: state.winnerId});
     });
   }
 });
@@ -213,33 +215,18 @@ slapp.action('match_confirmation_callback', 'match_confirmation_no', (msg, args)
 //*********************************************
 slapp.message('^.leaderboard', ['direct_message'], (msg, text) => {
   var state = {playerId: msg.meta.user_id};
-  console.log(state);
   msg.route('show_leaderboard', state);
-
-  var rankings = ApiHelper.getRankings().then((rankings) => {
-    var leaderBoard = rankings.map((element) => {
-      return element.rank + "- <@" + element.player + ">"
-    });
-
-    msg.respond({
-      channel: state.loserId,
-      text: leaderBoard
-    });
-  });
-});
+})
 
 slapp.route('show_leaderboard', (msg, state) => {
-  console.log("show_leaderboard route");
   ApiHelper.getRankings().then((rankings) => {
-    console.log("RANKINGS OK RESPOND");
-
-    var leaderBoard = rankings.map((score) => {
-      return score.rank + "- <@" + score.playerId + ">"
+    var leaderBoard = rankings.map((element) => {
+      return element.rank + "- <@" + element.playerId + ">"
     });
 
-    console.log(leaderBoard);
-
     msg.say({
+      channel: state.playerId,
+      as_user: true,
       text: leaderBoard.join('\n')
     });
   });
