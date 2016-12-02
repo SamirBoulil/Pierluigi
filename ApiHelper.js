@@ -149,6 +149,35 @@ var ApiHelper = (function() {
     })
   }
 
+  self.getPlayerGames = function(playerId) {
+    return axios.get('matchResults.json?orderBy="winnerId"&startAt="'+playerId+'"&endAt="'+playerId+'"')
+    .then((response) => {
+      var wonGames = response.data;
+
+      return axios.get('matchResults.json?orderBy="loserId"&startAt="'+playerId+'"&endAt="'+playerId+'"')
+      .then((response) => {
+        var lostGames = response.data;
+        var games = [];
+
+        games.push(wonGames);
+        games.push(lostGames);
+
+        var realGames = [];
+        for (var game in games) {
+          if (games.hasOwnProperty(game)) {
+            realGames.push(games[game]);
+          }
+        }
+
+        realGames = realGames.sort((game1, game2) => {
+          return game1.date - game2.date;
+        });
+
+        return Promise.resolve(realGames)
+      })
+    })
+  }
+
   return self;
 })();
 

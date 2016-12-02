@@ -97,8 +97,6 @@ slapp.action('register_callback', 'register_answer', (msg, value) => {
 //*********************************************
 // TODO: Protected route
 slapp.message('^.win <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'], (msg, text, loserId, winnerScore, loserScore) => {
-  console.log(text);
-
   var winnerId = msg.meta.user_id;
   winnerScore = Math.floor(parseInt(winnerScore, 10));
   loserScore = Math.floor(parseInt(loserScore, 10));
@@ -232,6 +230,33 @@ slapp.route('show_leaderboard', (msg, state) => {
   });
 });
 
+slapp.message('^.my-games$', ['direct_message'], (msg, text) => {
+  var playerId = msg.meta.user_id;
+  ApiHelper.getPlayerGames(playerId).then((playerGames) => {
+    playerGames = playerGames.map((game) => {
+      console.log(game);
+      var matchResult = '';
+      var opponentId = '';
+
+      if (game.winnerId === playerId) {
+        matchResult += '*[WIN]*';
+        opponentId = game.loserId;
+      } else {
+        matchResult += '[LOST]';
+        opponentId = game.winnerId;
+      }
+
+      var date = new Date(game.date);
+      var dateDescription = date.getDate() + '/' + date.getMonth()+1;
+
+      return `${matchResult} against <@${opponentId}> (${dateDescription})`;
+    });
+
+    msg.say({
+      text: playerGames.join('\n')
+    })
+  });
+});
 
 //*********************************************
 // Feature challengers
