@@ -234,7 +234,6 @@ slapp.message('^.my-games$', ['direct_message'], (msg, text) => {
   var playerId = msg.meta.user_id;
   ApiHelper.getPlayerGames(playerId).then((playerGames) => {
     playerGames = playerGames.map((game) => {
-      console.log(game);
       var matchResult = '';
       var opponentId = '';
 
@@ -247,9 +246,9 @@ slapp.message('^.my-games$', ['direct_message'], (msg, text) => {
       }
 
       var date = new Date(game.date);
-      var dateDescription = date.getDate() + '/' + date.getMonth()+1;
+      var dateDescription = date.getDate() + '/' + (date.getMonth()+1);
 
-      return `${matchResult} against <@${opponentId}> (${dateDescription})`;
+      return `${dateDescription} - ${matchResult} against <@${opponentId}> ${game.winnerScore}-${game.loserScore}`;
     });
 
     msg.say({

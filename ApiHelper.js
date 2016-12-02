@@ -2,6 +2,7 @@
 
 const axios = require('axios');
 const Promise = require('promise');
+const Utils = require('./Utils')
 
 axios.defaults.baseURL = "https://pierluigi-collina.firebaseio.com";
 
@@ -152,15 +153,12 @@ var ApiHelper = (function() {
   self.getPlayerGames = function(playerId) {
     return axios.get('matchResults.json?orderBy="winnerId"&startAt="'+playerId+'"&endAt="'+playerId+'"')
     .then((response) => {
-      var wonGames = response.data;
+      var wonGames = Utils.objectToArray(response.data);
 
       return axios.get('matchResults.json?orderBy="loserId"&startAt="'+playerId+'"&endAt="'+playerId+'"')
       .then((response) => {
-        var lostGames = response.data;
-        var games = [];
-
-        games.push(wonGames);
-        games.push(lostGames);
+        var lostGames = Utils.objectToArray(response.data);
+        var games = wonGames.concat(lostGames);
 
         var realGames = [];
         for (var game in games) {
@@ -170,11 +168,19 @@ var ApiHelper = (function() {
         }
 
         realGames = realGames.sort((game1, game2) => {
-          return game1.date - game2.date;
+          return new Date(game1.date) - new Date(game2.date);
         });
 
         return Promise.resolve(realGames)
       })
+      .catch((error) => {
+        console.log('Error while getting the match lost for user ' + playerId);
+        console.log(error);
+      })
+    })
+    .catch((error) => {
+      console.log('Error while getting the match won for user ' + playerId);
+      console.log(error);
     })
   }
 
