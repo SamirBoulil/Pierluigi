@@ -2,6 +2,7 @@
 
 const axios = require('axios');
 const Promise = require('promise');
+const Utils = require('./Utils')
 
 axios.defaults.baseURL = "https://pierluigi-collina.firebaseio.com";
 
@@ -146,6 +147,50 @@ var ApiHelper = (function() {
         console.log('An error occured while retrieving the player challengers');
         console.log(error);
       });
+    })
+  }
+
+  self.getPlayerGames = function(playerId) {
+    return axios.get('matchResults.json?orderBy="winnerId"&startAt="'+playerId+'"&endAt="'+playerId+'"')
+    .then((response) => {
+      var wonGames = Utils.objectToArray(response.data);
+
+      return axios.get('matchResults.json?orderBy="loserId"&startAt="'+playerId+'"&endAt="'+playerId+'"')
+      .then((response) => {
+        var lostGames = Utils.objectToArray(response.data);
+        var games = wonGames.concat(lostGames);
+
+        games = games.sort((game1, game2) => {
+          return new Date(game1.date) - new Date(game2.date);
+        });
+
+        return Promise.resolve(games)
+      })
+      .catch((error) => {
+        console.log('Error while getting the match lost for user ' + playerId);
+        console.log(error);
+      })
+    })
+    .catch((error) => {
+      console.log('Error while getting the match won for user ' + playerId);
+      console.log(error);
+    })
+  }
+
+  self.getGames = function() {
+    return axios.get('matchResults.json?orderBy="date"&limitToLast=15')
+    .then((response) => {
+      var games = Utils.objectToArray(response.data);
+
+      var sortedGames = games.sort((game1, game2) => {
+        return new Date(game1.date) - new Date(game2.date);
+      });
+
+      return Promise.resolve(sortedGames);
+    })
+    .catch((error) => {
+      console.log('Error while getting the match won for user ' + playerId);
+      console.log(error);
     })
   }
 
