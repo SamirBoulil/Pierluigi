@@ -184,9 +184,15 @@ slapp.action('match_confirmation_callback', 'match_confirmation_yes', (msg, args
     ApiHelper.addMatchResult(state.winnerId, state.loserId, state.winnerScore, state.loserScore)
     .then(() => {
       msg.respond(msg.body.response_url, 'Ok, the match result has been successfully registered.');
-      ApiHelper.refreshRank(state.winnerId, state.loserId);
-      msg.route('show_leaderboard', {playerId: state.loserId});
-      msg.route('show_challengers', {playerId: state.winnerId});
+      ApiHelper.refreshRank(state.winnerId, state.loserId)
+      .then(() => {
+        // Show leaderboard and challengers
+        msg.route('show_leaderboard', {playerId: state.loserId});
+        msg.route('show_challengers', {playerId: state.loserId});
+
+        msg.route('show_leaderboard', {playerId: state.winnerId});
+        msg.route('show_challengers', {playerId: state.winnerId});
+      });
     });
   }
 });
@@ -233,10 +239,10 @@ slapp.message('^.my-games$', ['direct_message'], (msg, text) => {
       var opponentId = '';
 
       if (game.winnerId === playerId) {
-        matchResult += '*[WIN]*';
+        matchResult += '*win*';
         opponentId = game.loserId;
       } else {
-        matchResult += '[LOST]';
+        matchResult += '*lost*';
         opponentId = game.winnerId;
       }
 

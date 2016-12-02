@@ -79,7 +79,8 @@ var ApiHelper = (function() {
           axios.patch('rankings/'+winnerId+'.json', {
             rank: loserRank
           });
-          axios.patch('rankings/'+loserId+'.json', {
+
+          return axios.patch('rankings/'+loserId+'.json', {
             rank: winnerRank
           });
         }
