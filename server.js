@@ -22,11 +22,41 @@ require('beepboop-slapp-presence-polyfill')(slapp, {
   debug: true
 })
 
+//*********************************************
+// Middleware functions
+//*********************************************
+slapp.use((msg, next) => {
+  if (typeof(msg.body.event) !== 'undefined' && typeof(msg.body.event.text) !== 'undefined') {
+    // Un protected routes
+    var publicRoutes = ['.register', 'help', '.wcid']
+    var action = msg.body.event.text.split(' ', 1)[0];
+
+    if (publicRoutes.indexOf(action) > -1 ) {
+      next();
+      return;
+    }
+
+    ApiHelper.isPlayerRegistered(msg.meta.user_id)
+      .then((isRegistered) => {
+        if (isRegistered) {
+          next()
+        } else {
+          msg.say('Hello, I\'m <@Pierluigi> the Baby Foot Referee.\nSee `.wcid` to see everything I am able to do for you.');
+        }
+      });
+  } else {
+    next();
+  }
+});
 
 //*********************************************
 // Register handler
 //*********************************************
 slapp.message('^.register', ['direct_message'], (msg) => {
+  msg.route('handle_register', {}, 600);
+});
+
+slapp.route('handle_register', (msg, state) => {
   ApiHelper.isPlayerRegistered(msg.meta.user_id)
   .then((isRegistered) => {
     if (!isRegistered) {
@@ -34,19 +64,19 @@ slapp.message('^.register', ['direct_message'], (msg) => {
         text: '',
         attachments: [{
           fallback: 'Do you want to register ?',
-          title: 'Do you want to join the Akeneo Baby Foot Star League (ABSL) ?',
+          title: 'Do you want to join the Baby Foot League ?',
           callback_id: 'register_callback',
           color: '#3AA3E3',
           attachment_type: 'default',
           actions: [{
-            name: 'register_answer',
+            name: 'register_answer_yes',
             text: 'Hell yeah!',
             style: 'primary',
             type: 'button',
             value: 'yes'
           },
           {
-            name: 'register_answer',
+            name: 'register_answer_no',
             text: 'Nope, not intrested',
             type: 'button',
             value: 'no'
@@ -65,23 +95,32 @@ slapp.message('^.register', ['direct_message'], (msg) => {
 })
 
 // Two != callbacks for this
-slapp.action('register_callback', 'register_answer', (msg, value) => {
-  var registerAnswer = '';
-
-  if (value === 'yes') {
-    registerAnswer = 'Awesome! let me register your account before you can start playing.';
-    ApiHelper.registerPlayer(msg.meta.user_id);
-  } else {
-    registerAnswer= 'Alright, then come back to me when you are ready! :soccer:';
-    // TODO: Call the helper route
-  }
+slapp.action('register_callback', 'register_answer_yes', (msg, value) => {
+  ApiHelper.registerPlayer(msg.meta.user_id);
 
   var responseAnswer = {
     text: '',
     attachments: [{
       fallback: 'Do you want to register ?',
-      title: 'Do you want to join the Akeneo Baby Foot Star League (ABSL) ?',
-      text: registerAnswer,
+      title: 'Do you want to join the Baby Foot League ?',
+      text: 'Awesome! let me register your account before you can start playing.',
+      callback_id: 'register_callback',
+      color: '#3AA3E3',
+    }]
+  };
+
+  msg.respond(msg.body.response_url, responseAnswer);
+  // TODO: show ranks
+  // TODO: show possible challengers');
+});
+
+slapp.action('register_callback', 'register_answer_no', (msg, value) => {
+  var responseAnswer = {
+    text: '',
+    attachments: [{
+      fallback: 'Do you want to register ?',
+      title: 'Do you want to join the Baby Foot League ?',
+      text: 'Alright, then come back to me when you are ready! :soccer:',
       callback_id: 'register_callback',
       color: '#3AA3E3',
     }]
@@ -306,7 +345,7 @@ slapp.route('show_challengers', (msg, state) => {
 //*********************************************
 slapp.message('help|.wcid', ['mention', 'direct_message'], (msg) => {
   var HELP_TEXT = `
-  Hello, I'm luigi the Akeneo Baby Foot referee. Here is the information I can provide:
+  Hello, I'm pierluigi the Baby Foot referee. Here is the information I can provide:
   \`.wcid\` - to get some help.
   \`.register\` - to see this message.
   \`.win <LOSING-PLAYER> <WINNER-SCORE>-<LOSER-SCORE>\` - to log a game result you have won.
