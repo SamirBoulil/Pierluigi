@@ -41,7 +41,10 @@ slapp.use((msg, next) => {
         if (isRegistered) {
           next()
         } else {
-          msg.say('Hello, I\'m <@Pierluigi> the Baby Foot Referee.\nSee `.wcid` to see everything I am able to do for you.');
+          msg.say({
+              as_user: true,
+              text: 'Hello, I\'m <@Pierluigi> the Baby Foot Referee.\nSee `.wcid` to see everything I am able to do for you.'
+            });
         }
       });
   } else {
@@ -61,6 +64,7 @@ slapp.route('handle_register', (msg, state) => {
   .then((isRegistered) => {
     if (!isRegistered) {
       msg.say({
+        as_user: true,
         text: '',
         attachments: [{
           fallback: 'Do you want to register ?',
@@ -84,7 +88,10 @@ slapp.route('handle_register', (msg, state) => {
         }]
       })
     } else {
-      msg.say('You are already enrolled into the Akeneo Baby Foot Star League');
+      msg.say({
+          as_user: true,
+          text: 'You are already enrolled into the Akeneo Baby Foot Star League'
+        });
       // TODO: show rankings
       // TODO: Show challengers
     }
@@ -99,6 +106,7 @@ slapp.action('register_callback', 'register_answer_yes', (msg, value) => {
   ApiHelper.registerPlayer(msg.meta.user_id);
 
   var responseAnswer = {
+    as_user: true,
     text: '',
     attachments: [{
       fallback: 'Do you want to register ?',
@@ -116,6 +124,7 @@ slapp.action('register_callback', 'register_answer_yes', (msg, value) => {
 
 slapp.action('register_callback', 'register_answer_no', (msg, value) => {
   var responseAnswer = {
+    as_user: true,
     text: '',
     attachments: [{
       fallback: 'Do you want to register ?',
@@ -173,11 +182,17 @@ slapp.message('^.win <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'], (ms
     }
 
     if (isInputError) {
-      msg.say('Oups, an error occured while saving the game result.\n' + textResponse.join('\n'));
+      msg.say({
+        as_user: true,
+        text: 'Oups, an error occured while saving the game result.\n ' + textResponse.join('\n')
+      });
     } else {
       var state = {winnerId: winnerId, loserId: loserId, winnerScore, loserScore};
       msg
-      .say(`Congratz for this huge win ! Let me check the result with <@${loserId}>.\n I\'ll come back to you when I\m done.`)
+      .say({
+          as_user: true,
+          text: `Congratz for this huge win ! Let me check the result with <@${loserId}>.\n I\'ll come back to you when I\m done.`
+        })
       .route('handle_match_confirmation', state, 600);
     }
   })
@@ -292,6 +307,7 @@ slapp.message('^.my-games$', ['direct_message'], (msg, text) => {
     });
 
     msg.say({
+      as_user: true,
       text: 'Here is the list of all the games you played:\n' + playerGames.join('\n')
     })
   });
@@ -307,6 +323,7 @@ slapp.message('^.last-games$', ['direct_message'], (msg, text) => {
     });
 
     msg.say({
+      as_user: true,
       text: 'Here is the list of the last 15 games:\n' + latestGames.join('\n')
     })
   });
@@ -354,7 +371,11 @@ slapp.message('help|.wcid', ['mention', 'direct_message'], (msg) => {
   \`.last-games\` - See the last 15 games results played in the league.
   \`.my-games\` - See all your games results in the baby foot league.
   `
-  msg.say(HELP_TEXT)
+
+  msg.say({
+      as_user: true,
+      text: HELP_TEXT
+    });
 })
 
 
