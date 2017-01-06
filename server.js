@@ -21,7 +21,82 @@ var slapp = Slapp({
 require('beepboop-slapp-presence-polyfill')(slapp, {
   debug: true
 })
+/***************************************************
+//
+/**************************************************/
+var sendMatchConfirmation = (msg, state) => {
+  msg.say({
+    channel: state.loserId,
+    as_user: true,
+    text: '',
+    attachments: [{
+      fallback: 'Match log confirmation',
+      title: `Do you confirm that you lost ${state.winnerScore}-${state.loserScore} against <@${state.winnerId}> ?`,
+      callback_id: 'match_confirmation_callback',
+      color: '#3AA3E3',
+      attachment_type: 'default',
+      actions: [{
+        name: 'match_confirmation_yes',
+        text: 'Yep, good game.',
+        style: 'primary',
+        type: 'button',
+        value: Utils.marshall({ state: state, value: 'yes' })
+      },
+        {
+          name: 'match_confirmation_no',
+          text: 'NO WAY ! That\' a lie!',
+          type: 'button',
+          value: Utils.marshall({ state: state, value: 'no' })
+        }]
+    }]
+  });
+};
 
+var sendLeaderboard = (msg, playerId) => {
+  msg.say({
+      channel: playerId,
+      as_user: true,
+      text: '*Leaderboard:*'
+  });
+
+  ApiHelper.getRankings().then((rankings) => {
+    var leaderBoard = rankings.map((element) => {
+      return element.rank + "- <@" + element.playerId + ">"
+    });
+
+    msg.say({
+      channel: playerId,
+      as_user: true,
+      text: leaderBoard.join('\n')
+    });
+  });
+};
+
+var sendChallengers = (msg, playerId) => {
+  msg.say({
+    channel: playerId,
+    as_user: true,
+    text: '*List of challengers:*'
+  });
+
+  ApiHelper.getChallengers(playerId).then((challengers) => {
+    var messages = [];
+
+    if (typeof(challengers.toBeat) !== 'undefined') {
+      messages.push(':up: if you beat <@' + challengers.toBeat.playerId + '> ('+challengers.toBeat.rank+' th)');
+    }
+
+    if (typeof(challengers.notToLose) !== 'undefined') {
+      messages.push(':down: if you lose against <@' + challengers.notToLose.playerId + '> ('+challengers.notToLose.rank+' th)');
+    }
+
+    msg.say({
+      channel: playerId,
+      as_user: true,
+      text: messages.join('\n')
+    });
+  });
+};
 
 //*********************************************
 // Register handler
@@ -55,8 +130,8 @@ slapp.message('^.register', ['direct_message'], (msg) => {
       })
     } else {
       msg.say('You are already enrolled into the Akeneo Baby Foot Star League');
-      // TODO: show rankings
-      // TODO: Show challengers
+      sendLeaderboard(msg, msg.meta.user_id);
+      sendChallengers(msg, msg.meta.user_id);
     }
   })
   .catch(function(error) {
@@ -72,7 +147,7 @@ slapp.action('register_callback', 'register_answer', (msg, value) => {
     registerAnswer = 'Awesome! let me register your account before you can start playing.';
     ApiHelper.registerPlayer(msg.meta.user_id);
   } else {
-    registerAnswer= 'Alright, then come back to me when you are ready! :soccer:';
+    registerAnswer = 'Alright, then come back to me when you are ready! :soccer:';
     // TODO: Call the helper route
   }
 
@@ -88,8 +163,8 @@ slapp.action('register_callback', 'register_answer', (msg, value) => {
   };
 
   msg.respond(msg.body.response_url, responseAnswer);
-  // TODO: show ranks
-  // TODO: show possible challengers');
+  sendLeaderboard(msg, msg.meta.user_id);
+  sendChallengers(msg, msg.meta.user_id);
 });
 
 //*********************************************
@@ -106,7 +181,6 @@ slapp.message('^.win <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'], (ms
 
   // Parsing score values
   if (isNaN(winnerScore) || isNaN(loserScore)) {
-    // TODO: Print usage();
     textResponse.push('The scores are not valid values.');
   } else {
     if (loserScore >= winnerScore) {
@@ -138,41 +212,13 @@ slapp.message('^.win <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'], (ms
     } else {
       var state = {winnerId: winnerId, loserId: loserId, winnerScore, loserScore};
       msg
-      .say(`Congratz for this huge win ! Let me check the result with <@${loserId}>.\n I\'ll come back to you when I\m done.`)
-      .route('handle_match_confirmation', state, 600);
+      .say(`Congratz for this huge win ! Let me check the result with <@${loserId}>.\n I\'ll come back to you when I\m done.`);
+      sendMatchConfirmation(msg, state);
     }
   })
   .catch((error) => {
     console.log('An error occured while checking if the loserId is registered');
     console.log(error);
-  });
-});
-
-slapp.route('handle_match_confirmation', (msg, state) => {
-  msg.say({
-    channel: state.loserId,
-    as_user: true,
-    text: '',
-    attachments: [{
-      fallback: 'Match log confirmation',
-      title: `Do you confirm that you lost ${state.winnerScore}-${state.loserScore} against <@${state.winnerId}> ?`,
-      callback_id: 'match_confirmation_callback',
-      color: '#3AA3E3',
-      attachment_type: 'default',
-      actions: [{
-        name: 'match_confirmation_yes',
-        text: 'Yep, good game.',
-        style: 'primary',
-        type: 'button',
-        value: Utils.marshall({ state: state, value: 'yes' })
-      },
-      {
-        name: 'match_confirmation_no',
-        text: 'NO WAY ! That\' a lie!',
-        type: 'button',
-        value: Utils.marshall({ state: state, value: 'no' })
-      }]
-    }]
   });
 });
 
@@ -187,11 +233,16 @@ slapp.action('match_confirmation_callback', 'match_confirmation_yes', (msg, args
       ApiHelper.refreshRank(state.winnerId, state.loserId)
       .then(() => {
         // Show leaderboard and challengers
-        msg.route('show_leaderboard', {playerId: state.loserId});
-        msg.route('show_challengers', {playerId: state.loserId});
+        sendLeaderboard(msg, state.loserId);
+        sendChallengers(msg, state.loserId);
 
-        msg.route('show_leaderboard', {playerId: state.winnerId});
-        msg.route('show_challengers', {playerId: state.winnerId});
+        msg.say({
+          channel: state.winnerId,
+          as_user: true,
+          text: `<@${state.loserId}> confirmed your victory :tada:. Good game.`
+        });
+        sendLeaderboard(msg, state.winnerId);
+        sendChallengers(msg, state.winnerId);
       });
     });
   }
@@ -213,23 +264,9 @@ slapp.action('match_confirmation_callback', 'match_confirmation_no', (msg, args)
 // Feature leaderboard
 //*********************************************
 slapp.message('^.leaderboard', ['direct_message'], (msg, text) => {
-  var state = {playerId: msg.meta.user_id};
-  msg.route('show_leaderboard', state);
+  sendLeaderboard(msg, msg.meta.user_id);
 })
 
-slapp.route('show_leaderboard', (msg, state) => {
-  ApiHelper.getRankings().then((rankings) => {
-    var leaderBoard = rankings.map((element) => {
-      return element.rank + "- <@" + element.playerId + ">"
-    });
-
-    msg.say({
-      channel: state.playerId,
-      as_user: true,
-      text: leaderBoard.join('\n')
-    });
-  });
-});
 
 slapp.message('^.my-games$', ['direct_message'], (msg, text) => {
   var playerId = msg.meta.user_id;
@@ -277,28 +314,7 @@ slapp.message('^.last-games$', ['direct_message'], (msg, text) => {
 // Feature challengers
 //*********************************************
 slapp.message('^.challengers', ['direct_message'], (msg, text) => {
-  var state = {playerId: msg.meta.user_id};
-  msg.route('show_challengers', state);
-})
-
-slapp.route('show_challengers', (msg, state) => {
-  ApiHelper.getChallengers(state.playerId).then((challengers) => {
-    var messages = [];
-
-    if (typeof(challengers.toBeat) !== 'undefined') {
-      messages.push('To go up in the leader board, you need to beat <@' + challengers.toBeat.playerId + '> ('+challengers.toBeat.rank+' th)');
-    }
-
-    if (typeof(challengers.notToLose) !== 'undefined') {
-      messages.push('Don\'t *lose* against <@' + challengers.notToLose.playerId + '> ('+challengers.notToLose.rank+' th) or you\'ll go down in the leaderboard :s');
-    }
-
-    msg.say({
-      channel: state.playerId,
-      as_user: true,
-      text: messages.join('\n')
-    });
-  });
+  sendChallengers(msg, msg.meta.user_id);
 });
 
 //*********************************************
@@ -306,7 +322,7 @@ slapp.route('show_challengers', (msg, state) => {
 //*********************************************
 slapp.message('help|.wcid', ['mention', 'direct_message'], (msg) => {
   var HELP_TEXT = `
-  Hello, I'm luigi the Akeneo Baby Foot referee. Here is the information I can provide:
+  Hello, I'm Pierluigi the Akeneo Baby Foot referee. Here is the information I can provide you:
   \`.wcid\` - to get some help.
   \`.register\` - to see this message.
   \`.win <LOSING-PLAYER> <WINNER-SCORE>-<LOSER-SCORE>\` - to log a game result you have won.
