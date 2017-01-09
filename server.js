@@ -267,10 +267,13 @@ slapp.action('match_confirmation_callback', 'match_confirmation_no', (msg, args)
 //*********************************************
 // Feature leaderboard
 //*********************************************
-slapp.message('^.leaderboard', ['direct_message'], (msg, text) => {
-  sendLeaderboard(msg, msg.meta.user_id);
+slapp.message('^.leaderboard', ['mention', 'direct_message'], (msg, text) => {
+  if (msg.isDirectMessage()) {
+    sendLeaderboard(msg, msg.meta.user_id);
+  } else if (msg.isMention()) {
+    sendLeaderboard(msg, msg.meta.channel_id)
+  }
 })
-
 
 slapp.message('^.my-games$', ['direct_message'], (msg, text) => {
   var playerId = msg.meta.user_id;
