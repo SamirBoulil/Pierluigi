@@ -130,8 +130,8 @@ slapp.message('^.register', ['direct_message'], (msg) => {
       })
     } else {
       msg.say('You are already enrolled into the Akeneo Baby Foot Star League');
-      sendLeaderboard(msg, msg.meta.user_id);
-      sendChallengers(msg, msg.meta.user_id);
+      msg.say('type .leaderboard to see who is the better players');
+      msg.say('type .challengers to see who you need to beat to advance in the leaderboard');
     }
   })
   .catch(function(error) {
@@ -323,8 +323,8 @@ slapp.message('^.challengers', ['direct_message'], (msg, text) => {
 slapp.message('help|.wcid', ['mention', 'direct_message'], (msg) => {
   var HELP_TEXT = `
   Hello, I'm Pierluigi the Akeneo Baby Foot referee. Here is the information I can provide you:
-  \`.wcid\` - to get some help.
-  \`.register\` - to see this message.
+  \`help\` - to get some help.
+  \`.register\` - to enroll in the baby footleague.
   \`.win <LOSING-PLAYER> <WINNER-SCORE>-<LOSER-SCORE>\` - to log a game result you have won.
   \`.leaderboard\` - Show the Baby foot leaderboard.
   \`.challengers\` - Show the next challengers you need to take on!
