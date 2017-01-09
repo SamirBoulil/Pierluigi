@@ -60,6 +60,10 @@ var sendLeaderboard = (msg, playerId) => {
   });
 
   ApiHelper.getRankings().then((rankings) => {
+    var leaderBoard = rankings.sort((element1, element2) => {
+      return element1.rank > element2.rank;
+    });
+
     var leaderBoard = rankings.map((element) => {
       return element.rank + "- <@" + element.playerId + ">"
     });
