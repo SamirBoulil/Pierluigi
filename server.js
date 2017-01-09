@@ -257,10 +257,7 @@ slapp.action('match_confirmation_callback', 'match_confirmation_no', (msg, args)
 
   if (typeof(args.state) !== 'undefined') {
     var state = args.state;
-    ApiHelper.addMatchResult(state.winnerId, state.loserId, state.winnerScore, state.loserScore)
-    .then(()=> {
-      msg.respond(msg.body.response_url, `Ok, You\'ll have to see this IRL with <@${state.winnerId}>`);
-    });
+    msg.respond(msg.body.response_url, `Ok, You\'ll have to see this IRL with <@${state.winnerId}>`);
   }
 });
 
@@ -302,7 +299,7 @@ slapp.message('^.my-games$', ['direct_message'], (msg, text) => {
   });
 });
 
-slapp.message('^.last-games$', ['direct_message'], (msg, text) => {
+slapp.message('^.last-games$', ['mention', 'direct_message'], (msg, text) => {
   ApiHelper.getGames().then((latestGames) => {
     latestGames = latestGames.map((game) => {
       var date = new Date(game.date);
@@ -312,6 +309,7 @@ slapp.message('^.last-games$', ['direct_message'], (msg, text) => {
     });
 
     msg.say({
+      as_user: true,
       text: 'Here is the list of the last 15 games:\n' + latestGames.join('\n')
     })
   });
