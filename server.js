@@ -216,7 +216,7 @@ slapp.message('^.win <@([^>]+)> ([^>]+)\s*-\s*([^>]+)$', ['direct_message'], (ms
     } else {
       var state = {winnerId: winnerId, loserId: loserId, winnerScore, loserScore};
       msg
-      .say(`Congratz for this huge win ! Let me check the result with <@${loserId}>.\n I\'ll come back to you when I\m done.`);
+      .say(`Congratz for this huge win ! Let me check the result with <@${loserId}>.\n I'll come back to you when I'm done.`);
       sendMatchConfirmation(msg, state);
     }
   })
@@ -243,10 +243,14 @@ slapp.action('match_confirmation_callback', 'match_confirmation_yes', (msg, args
         msg.say({
           channel: state.winnerId,
           as_user: true,
-          text: `<@${state.loserId}> confirmed your victory :tada:. Good game.`
+          text: `<@${state.loserId}> confirmed your victory :tada:. Good game.\nSee the *leaderboard* with \`.leaderboard\`\n or see who are you next *challengers* with \`.challengers\``
         });
-        sendLeaderboard(msg, state.winnerId);
-        sendChallengers(msg, state.winnerId);
+
+        msg.say({
+            channel: state.loserId,
+            as_user: true,
+            text: `See the *leaderboard* with \`.leaderboard\`\n or see who are you next *challengers* with \`.challengers\``
+        });
       });
     });
   }
