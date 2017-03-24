@@ -53,12 +53,6 @@ var sendMatchConfirmation = (msg, state) => {
 };
 
 var sendLeaderboard = (msg, playerId) => {
-  msg.say({
-      channel: playerId,
-      as_user: true,
-      text: '*Leaderboard:*'
-  });
-
   ApiHelper.getRankings().then((rankings) => {
     var leaderBoard = rankings.sort((element1, element2) => {
       return element1.rank > element2.rank;
@@ -71,18 +65,12 @@ var sendLeaderboard = (msg, playerId) => {
     msg.say({
       channel: playerId,
       as_user: true,
-      text: leaderBoard.join('\n')
+      text: '*Leaderboard:*\n' + leaderBoard.join('\n')
     });
   });
 };
 
 var sendChallengers = (msg, playerId) => {
-  msg.say({
-    channel: playerId,
-    as_user: true,
-    text: '*List of challengers:*'
-  });
-
   ApiHelper.getChallengers(playerId).then((challengers) => {
     var messages = [];
 
@@ -97,7 +85,7 @@ var sendChallengers = (msg, playerId) => {
     msg.say({
       channel: playerId,
       as_user: true,
-      text: messages.join('\n')
+      text: '*List of challengers:*' + messages.join('\n')
     });
   });
 };
@@ -243,13 +231,13 @@ slapp.action('match_confirmation_callback', 'match_confirmation_yes', (msg, args
         msg.say({
           channel: state.winnerId,
           as_user: true,
-          text: `<@${state.loserId}> confirmed your victory :tada:. Good game.\nSee the *leaderboard* with \`.leaderboard\`\n or see who are you next *challengers* with \`.challengers\``
+          text: `<@${state.loserId}> confirmed your victory :tada:. Good game.\nSee the *leaderboard* with \`.leaderboard\`\n or see who are your next *challengers* with \`.challengers\``
         });
 
         msg.say({
             channel: state.loserId,
             as_user: true,
-            text: `See the *leaderboard* with \`.leaderboard\`\n or see who are you next *challengers* with \`.challengers\``
+            text: `See the *leaderboard* with \`.leaderboard\`\n or see who are your next *challengers* with \`.challengers\``
         });
       });
     });
